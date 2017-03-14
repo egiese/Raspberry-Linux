@@ -1,0 +1,12 @@
+2.   Defragmenting a large hard drive can take a very long
+     time.  To consolidate a DoubleSpace compressed drive,
+     change to the compressed drive and then issue a command
+     like so:
+   
+           dblspace /defragment <ENTER>
+        
+     A shortcut for the above command is:
+        
+           dblspace /def <ENTER>
+   
+   

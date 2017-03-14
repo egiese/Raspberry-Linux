@@ -1,0 +1,19 @@
+An excerpt from LEARNING DOS FOR THE COMPLETE NOVICE, by Steven Woas, copyright 1993.  
+
+1.   Change to the compressed drive and then issue a CHKDSK
+     command like so:
+        
+           c: <ENTER>
+         
+           chkdsk /f <ENTER>
+   
+     The /F tells DOS to fix errors. 
+   
+     Another option is to do it like so:
+   
+           dblspace /chkdsk /f  <ENTER>
+        
+     A shortcut for the DBLSPACE /CHKDSK /F command is:
+   
+           dblspace /chk /f  <ENTER>
+   
