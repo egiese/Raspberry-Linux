@@ -8,7 +8,8 @@
 
 void do_find(char [], char []);
 void printPermissions(char []);
-int getNumDirEntries(char []);
+int getNumDirs(char []);
+int matchExists(char [], char[]);
 
 int main(int ac, char *av[])
 {
@@ -35,9 +36,9 @@ void do_find(char index[], char dirname[])
 	char par[] = "..";
 	int i = 0;
 	int j = 0;
+	int numDirs = getNumDirs(dirname);
+	int matchFound = matchExists(index, dirname);
 
-	int numDirEnt = getNumDirEntries(dirname);
-	
 	if( (dirPtr = opendir(dirname)) == NULL )
 	{
 		fprintf(stderr, "Cannot open %s\n", dirname);
@@ -45,12 +46,16 @@ void do_find(char index[], char dirname[])
 	}
 	else
 	{
-		char *dirNames[numDirEnt];
+		char *dirNames[numDirs];
 		char cwd[1024] = {0};
 		chdir(dirname);
 		getcwd(cwd, sizeof(cwd));
-		printf("%s\n", cwd);
 
+		/* Only print PATH if at least one match is inside */
+		if(matchFound)
+			printf("%s\n", cwd);
+
+		/* Read through all directory entries and add DIR names to buffer */
 		while( (direntPtr = readdir(dirPtr)) != NULL )
 		{
 			if( direntPtr->d_type == DT_DIR )
@@ -60,13 +65,13 @@ void do_find(char index[], char dirname[])
 				printPermissions(direntPtr->d_name);
 		}
 
-		for(j = 0; j < numDirEnt; j++)
+		/* Recursively call do_find on DIR names in buffer */
+		for(j = 0; j < numDirs; j++)
 		{
 			if( strcmp(dirNames[j],cur) != 0 && strcmp(dirNames[j],par) != 0)
 			{
 				do_find(index, dirNames[j]);
 				chdir("..");
-
 			}
 		}
 	}
@@ -77,12 +82,39 @@ void do_find(char index[], char dirname[])
 	}
 }
 
-int getNumDirEntries(char dirname[])
+/* Check the CWD to see if there a match exists inside - for printing PATH */
+int matchExists(char index[], char dirname[])
+{
+	DIR *dirCtr;
+	struct dirent *direntCtr;
+
+	if( (dirCtr = opendir(dirname)) == NULL )
+	{
+		fprintf(stderr, "Cannot open %s\n", dirname);
+		exit(1);
+	}
+	else
+	{
+		while( (direntCtr = readdir(dirCtr)) != NULL )
+			if( strstr(direntCtr->d_name, index) )
+				return 1;
+
+		if( (closedir(dirCtr)) == -1 )
+		{
+			fprintf(stderr, "close error: %s\n", dirname);
+			exit(1);
+		}
+	}
+	return 0;
+}
+
+/* Function to count the number of directories in a given directory */
+int getNumDirs(char dirname[])
 {
 	DIR *dirCtr;
 	struct dirent *direntCtr;
 	int numDirs = 0;
-	
+
 	if( (dirCtr = opendir(dirname)) == NULL )
 	{
 		fprintf(stderr, "Cannot open %s\n", dirname);
@@ -93,7 +125,7 @@ int getNumDirEntries(char dirname[])
 		while( (direntCtr = readdir(dirCtr)) != NULL )
 			if(direntCtr->d_type == DT_DIR)
 				numDirs++;
-			
+
 		if( (closedir(dirCtr)) == -1 )
 		{
 			fprintf(stderr, "close error: %s\n", dirname);
@@ -103,10 +135,13 @@ int getNumDirEntries(char dirname[])
 	return numDirs;
 }
 
+/* Function to print the permissions in form of (xxxx/----------)
+ * for each directory entry that is passed as argument
+ */
 void printPermissions(char filename[])
 {
 	struct stat fileS;
-	
+
 	if( stat(filename, &fileS) < 0 )
 	{
 		printf("File stat error\n");
@@ -119,7 +154,7 @@ void printPermissions(char filename[])
 	else
 		printf("%o", fileS.st_mode&(S_ISUID));
 	printf("%o/", fileS.st_mode&(S_IRWXU|S_IRWXG|S_IRWXO));
-	
+
 	if( S_ISDIR(fileS.st_mode) )
 		printf("d");
 	else
